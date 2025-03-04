@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
 
 env:
-  WORKING_DIR: "../../infra/todoapp_infra_vm" # Dynamic path based on branch
-
+  WORKING_DIR: "infra/todoapp_infra_vm" 
+  
 permissions:
   id-token: write
   contents: read
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ../../infra/todoapp_infra_vm
+        working-directory: infra/todoapp_infra_vm
 
     # env:  # Define Azure credentials at the job level
     #   ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
