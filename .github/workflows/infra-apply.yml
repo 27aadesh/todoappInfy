@@ -1,0 +1,11 @@
+name: "Infra Apply"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    uses: ./.github/actions/terraform-plan-apply/terraform-deploy.yml

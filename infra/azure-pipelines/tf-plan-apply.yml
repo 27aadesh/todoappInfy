@@ -1,0 +1,111 @@
+trigger: none
+
+pool: 
+  vmImage: ubuntu-latest
+
+variables:
+  WORKING_DIRECTORY: 'todoapp_infra_k8s'
+  SERVICE_CONNECTION_NAME: 'azure-connection'
+  TF_BACKEND_RG_NAME: 'rg-tfstate'
+  TF_BACKEND_STORAGE_ACCOUNT_NAME: 'stg9834tfstate'
+  TF_BACKEND_CONTAINER_NAME: 'tfstate'
+  TF_BACKEND_TFSTATE_FILE_NAME: 'terraform.tfstate'
+
+stages:
+- stage: TerraformInit
+  jobs:
+  - job: TerraformInit
+    steps:
+    # Task 1 - Install Terraform Tool
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: 'latest'
+    
+    # Task 2 - Terraform Init
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Init Task'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/$(WORKING_DIRECTORY)'
+        backendServiceArm: '$(SERVICE_CONNECTION_NAME)'
+        backendAzureRmResourceGroupName: '$(TF_BACKEND_RG_NAME)'
+        backendAzureRmStorageAccountName: '$(TF_BACKEND_STORAGE_ACCOUNT_NAME)'
+        backendAzureRmContainerName: '$(TF_BACKEND_CONTAINER_NAME)'
+        backendAzureRmKey: '$(TF_BACKEND_TFSTATE_FILE_NAME)'
+
+- stage: TerraformPlan
+  dependsOn: [TerraformInit]
+  jobs:
+  - job: TerraformInitAndPlan
+    steps:
+    # Task 1 - Install Terraform Tool
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: 'latest'
+
+    # Task 2 - Terraform Init
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Init Task'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/$(WORKING_DIRECTORY)'
+        backendServiceArm: $(SERVICE_CONNECTION_NAME)
+        backendAzureRmResourceGroupName: $(TF_BACKEND_RG_NAME)
+        backendAzureRmStorageAccountName: $(TF_BACKEND_STORAGE_ACCOUNT_NAME)
+        backendAzureRmContainerName: $(TF_BACKEND_CONTAINER_NAME)
+        backendAzureRmKey: $(TF_BACKEND_TFSTATE_FILE_NAME)
+    
+    # Task3 - Terraform Plan
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Plan Task'
+      inputs:
+        provider: 'azurerm'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/$(WORKING_DIRECTORY)'
+        command: 'plan'
+        environmentServiceNameAzureRM: $(SERVICE_CONNECTION_NAME)      
+
+- stage: TerraformApply
+  dependsOn: [TerraformPlan]
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - job: ManualApprovalJob
+    timeoutInMinutes: 1440
+    pool: server
+    steps:
+    - task: ManualValidation@0
+      timeoutInMinutes: 1440 
+      inputs:
+        notifyUsers: 'abc@gmail.com, bcd@gmail.com'
+        instructions: 'Please validate the terraform plan and approve it.'
+
+  - job: TerraformInitAndApply
+    dependsOn: ManualApprovalJob
+    steps:
+    # Task 1 - Install Terraform Tool
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: 'latest'
+
+    # Task 2 - Terraform Init
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Init Task'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/$(WORKING_DIRECTORY)'
+        backendServiceArm: $(SERVICE_CONNECTION_NAME)
+        backendAzureRmResourceGroupName: $(TF_BACKEND_RG_NAME)
+        backendAzureRmStorageAccountName: $(TF_BACKEND_STORAGE_ACCOUNT_NAME)
+        backendAzureRmContainerName: $(TF_BACKEND_CONTAINER_NAME)
+        backendAzureRmKey: $(TF_BACKEND_TFSTATE_FILE_NAME)
+    
+    # Task3 - Terraform Apply
+    - task: TerraformTaskV4@4
+      displayName: 'Terraform Apply Task'
+      inputs:
+        provider: 'azurerm'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/$(WORKING_DIRECTORY)/'
+        command: 'apply'
+        environmentServiceNameAzureRM: $(SERVICE_CONNECTION_NAME)       
