@@ -28,7 +28,8 @@ runs:
 
     - name: 'Build Docker image'
       shell: bash
-      run: docker build -t ${{ inputs.image-name }}:${{ inputs.image-tag }} -f ${{ inputs.dockerfile-path }} .
+      working-directory: ${{ inputs.dockerfile-path }}
+      run: docker build -t ${{ inputs.image-name }}:${{ inputs.image-tag }} .
 
     # - name: 'Push Docker image'
     #   shell: bash
