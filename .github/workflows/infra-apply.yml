@@ -2,9 +2,6 @@ name: "Terraform CI/CD Pipeline"
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - dev
 
 env:
   WORKING_DIR: "../../infra/todoapp_infra_vm" # Dynamic path based on branch
