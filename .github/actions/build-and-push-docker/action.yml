@@ -22,14 +22,14 @@ runs:
     - name: 'Checkout code'
       uses: actions/checkout@v2
 
-    - name: 'Log in to Docker Hub'
-      shell: bash
-      run: echo "${{ inputs.password }}" | docker login -u "${{ inputs.username }}" --password-stdin
+    # - name: 'Log in to Docker Hub'
+    #   shell: bash
+    #   run: echo "${{ inputs.password }}" | docker login -u "${{ inputs.username }}" --password-stdin
 
     - name: 'Build Docker image'
       shell: bash
       run: docker build -t ${{ inputs.image-name }}:${{ inputs.image-tag }} -f ${{ inputs.dockerfile-path }} .
 
-    - name: 'Push Docker image'
-      shell: bash
-      run: docker push ${{ inputs.image-name }}:${{ inputs.image-tag }}
+    # - name: 'Push Docker image'
+    #   shell: bash
+    #   run: docker push ${{ inputs.image-name }}:${{ inputs.image-tag }}
